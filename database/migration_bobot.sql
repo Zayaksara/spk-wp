@@ -5,3 +5,5 @@ USE spk_wp;
 
 ALTER TABLE kriteria MODIFY bobot DECIMAL(6,4) NOT NULL;
 
+
+

@@ -6,3 +6,5 @@ define('DB_PASS', '');
 define('DB_NAME', 'spk_wp');
 ?>
 
+
+
