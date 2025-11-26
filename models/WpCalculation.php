@@ -139,6 +139,110 @@ class WpCalculation {
             throw new Exception('Error getting results: ' . $e->getMessage());
         }
     }
+    
+    public function getCalculationDetails($analisis_id) {
+        // Get data
+        $kriteria = $this->kriteriaModel->getAll($analisis_id);
+        $alternatif = $this->alternatifModel->getAll($analisis_id);
+        $nilaiData = $this->alternatifModel->getAllNilai($analisis_id);
+        
+        // Organize nilai
+        $nilai = [];
+        foreach ($nilaiData as $n) {
+            $nilai[$n['alternatif_id']][$n['kriteria_id']] = $n['nilai'];
+        }
+        
+        // Cache max/min untuk setiap kriteria
+        $maxMin = [];
+        foreach ($kriteria as $kri) {
+            $max = 0;
+            $min = PHP_INT_MAX;
+            
+            foreach ($alternatif as $alt) {
+                $val = $nilai[$alt['id']][$kri['id']] ?? 0;
+                if ($val > $max) $max = $val;
+                if ($val > 0 && $val < $min) $min = $val;
+            }
+            
+            $maxMin[$kri['id']] = [
+                'max' => $max,
+                'min' => ($min > 0 && $min < PHP_INT_MAX) ? $min : 1
+            ];
+        }
+        
+        // Step 1: Normalize values
+        $normalized = [];
+        foreach ($alternatif as $alt) {
+            $normalized[$alt['id']] = [];
+            foreach ($kriteria as $kri) {
+                $value = $nilai[$alt['id']][$kri['id']] ?? 0;
+                
+                if ($kri['tipe'] === 'benefit') {
+                    $max = $maxMin[$kri['id']]['max'];
+                    $normalized[$alt['id']][$kri['id']] = $max > 0 ? $value / $max : 0;
+                } else {
+                    $min = $maxMin[$kri['id']]['min'];
+                    $normalized[$alt['id']][$kri['id']] = ($min > 0 && $value > 0) ? $min / $value : 0;
+                }
+            }
+        }
+        
+        // Step 2: Calculate WP with details
+        $wpDetails = [];
+        foreach ($alternatif as $alt) {
+            $wp = 1;
+            $steps = [];
+            
+            foreach ($kriteria as $kri) {
+                $normValue = $normalized[$alt['id']][$kri['id']] ?? 0;
+                $powered = pow($normValue, $kri['bobot']);
+                $wp *= $powered;
+                
+                $steps[] = [
+                    'kriteria_id' => $kri['id'],
+                    'kriteria_nama' => $kri['nama'],
+                    'normalized' => $normValue,
+                    'bobot' => $kri['bobot'],
+                    'powered' => $powered
+                ];
+            }
+            
+            $wpDetails[] = [
+                'alternatif_id' => $alt['id'],
+                'alternatif_nama' => $alt['nama'],
+                'nilai_wp' => $wp,
+                'steps' => $steps
+            ];
+        }
+        
+        // Sort by WP
+        usort($wpDetails, function($a, $b) {
+            return $b['nilai_wp'] <=> $a['nilai_wp'];
+        });
+        
+        // Add ranking
+        foreach ($wpDetails as $index => &$detail) {
+            $detail['ranking'] = $index + 1;
+        }
+        
+        // Organize nilai untuk view (hanya nilai, bukan array)
+        $nilaiSimple = [];
+        foreach ($alternatif as $alt) {
+            $nilaiSimple[$alt['id']] = [];
+            foreach ($kriteria as $kri) {
+                $nilaiSimple[$alt['id']][$kri['id']] = $nilai[$alt['id']][$kri['id']] ?? 0;
+            }
+        }
+        
+        return [
+            'kriteria' => $kriteria,
+            'alternatif' => $alternatif,
+            'nilai' => $nilaiSimple,
+            'maxMin' => $maxMin,
+            'normalized' => $normalized,
+            'wpDetails' => $wpDetails
+        ];
+    }
 }
 ?>
 

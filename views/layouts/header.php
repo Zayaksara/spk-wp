@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= isset($page_title) ? $page_title : 'Sistem Perhitungan WP' ?></title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Raleway:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="<?= BASE_URL ?>assets/css/style.css">
     <style>
         .top-nav {
@@ -83,6 +86,7 @@
                 <a href="<?= BASE_URL ?>?action=landing" class="nav-link <?= (isset($_GET['action']) && $_GET['action'] == 'landing') || (!isset($_GET['action'])) ? 'active' : '' ?>">Beranda</a>
                 <a href="<?= BASE_URL ?>?action=dashboard" class="nav-link <?= (isset($_GET['action']) && $_GET['action'] == 'dashboard') ? 'active' : '' ?>">Dashboard</a>
                 <a href="<?= BASE_URL ?>?action=index" class="nav-link <?= (isset($_GET['action']) && $_GET['action'] == 'index') ? 'active' : '' ?>">Kelola Analisis</a>
+                <a href="<?= BASE_URL ?>?action=simulasi" class="nav-link <?= (isset($_GET['action']) && $_GET['action'] == 'simulasi') ? 'active' : '' ?>">📊 Simulasi</a>
                 <a href="<?= BASE_URL ?>?action=create" class="nav-link" style="background: var(--accent);">+ Analisis Baru</a>
             </div>
         </div>

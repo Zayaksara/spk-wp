@@ -36,6 +36,12 @@ class ResultController {
             $nilai[$n['alternatif_id']][$n['kriteria_id']] = $n;
         }
         
+        // Get calculation details for visualization
+        $calculationDetails = null;
+        if (count($hasil) > 0) {
+            $calculationDetails = $this->wpCalculation->getCalculationDetails($id);
+        }
+        
         require_once __DIR__ . '/../views/result.php';
     }
 }

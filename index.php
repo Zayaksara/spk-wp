@@ -10,7 +10,8 @@ $routes = [
     'create' => ['controller' => 'HomeController', 'method' => 'create', 'needs_id' => false],
     'edit' => ['controller' => 'HomeController', 'method' => 'edit', 'needs_id' => true],
     'view' => ['controller' => 'ResultController', 'method' => 'view', 'needs_id' => true],
-    'delete' => ['controller' => 'HomeController', 'method' => 'delete', 'needs_id' => true]
+    'delete' => ['controller' => 'HomeController', 'method' => 'delete', 'needs_id' => true],
+    'simulasi' => ['controller' => 'SimulasiController', 'method' => 'index', 'needs_id' => false]
 ];
 
 $action = $_GET['action'] ?? 'landing';

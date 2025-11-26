@@ -49,8 +49,12 @@ class DashboardController {
         // Get analisis with results
         $analisis_with_results = [];
         foreach ($stats['analisis_terbaru'] as $analisis) {
-            $hasil = $this->wpCalculation->getResults($analisis['id']);
-            $analisis['has_results'] = count($hasil) > 0;
+            try {
+                $hasil = $this->wpCalculation->getResults($analisis['id']);
+                $analisis['has_results'] = count($hasil) > 0;
+            } catch (Exception $e) {
+                $analisis['has_results'] = false;
+            }
             $analisis['alternatif_count'] = count($this->alternatifModel->getAll($analisis['id']));
             $analisis['kriteria_count'] = count($this->kriteriaModel->getAll($analisis['id']));
             $analisis_with_results[] = $analisis;
