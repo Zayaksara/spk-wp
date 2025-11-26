@@ -13,7 +13,7 @@ require_once __DIR__ . '/layouts/header.php';
     align-items: center;
     text-align: center;
     padding: 40px 20px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #232F5D 0%, #1A2447 100%);
     color: white;
     position: relative;
     overflow: hidden;
@@ -76,20 +76,21 @@ require_once __DIR__ . '/layouts/header.php';
 }
 
 .cta-primary {
-    background: white;
-    color: #667eea;
+    background: #FB7A2E;
+    color: white;
     padding: 18px 40px;
     border-radius: 50px;
     text-decoration: none;
     font-weight: bold;
     font-size: 18px;
     transition: all 0.3s ease;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    box-shadow: 0 4px 15px rgba(251, 122, 46, 0.3);
 }
 
 .cta-primary:hover {
     transform: translateY(-3px);
-    box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+    box-shadow: 0 6px 20px rgba(251, 122, 46, 0.4);
+    background: #E6681F;
 }
 
 .cta-secondary {
@@ -106,13 +107,13 @@ require_once __DIR__ . '/layouts/header.php';
 
 .cta-secondary:hover {
     background: white;
-    color: #667eea;
+    color: #232F5D;
     transform: translateY(-3px);
 }
 
 .features-section {
     background: white;
-    color: #333;
+    color: var(--text-primary);
     padding: 80px 20px;
     margin-top: 0;
 }
@@ -126,7 +127,7 @@ require_once __DIR__ . '/layouts/header.php';
     text-align: center;
     font-size: 36px;
     margin-bottom: 50px;
-    color: #333;
+    color: #232F5D;
 }
 
 .features-grid {
@@ -136,16 +137,17 @@ require_once __DIR__ . '/layouts/header.php';
 }
 
 .feature-card {
-    background: #f8f9fa;
+    background: var(--bg-light);
     padding: 30px;
     border-radius: 12px;
     text-align: center;
     transition: transform 0.3s ease, box-shadow 0.3s ease;
+    box-shadow: var(--shadow);
 }
 
 .feature-card:hover {
     transform: translateY(-10px);
-    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    box-shadow: 0 10px 30px rgba(35, 47, 93, 0.15);
 }
 
 .feature-icon {
@@ -157,16 +159,16 @@ require_once __DIR__ . '/layouts/header.php';
     font-size: 22px;
     font-weight: bold;
     margin-bottom: 15px;
-    color: #667eea;
+    color: #232F5D;
 }
 
 .feature-description {
-    color: #666;
+    color: #6876DF;
     line-height: 1.6;
 }
 
 .stats-section {
-    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    background: linear-gradient(135deg, #4279B4 0%, #3568A0 100%);
     color: white;
     padding: 60px 20px;
 }

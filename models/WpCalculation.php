@@ -26,7 +26,25 @@ class WpCalculation {
             $nilai[$n['alternatif_id']][$n['kriteria_id']] = $n['nilai'];
         }
         
-        // Step 1: Normalize values
+        // Cache max/min untuk setiap kriteria (optimasi performance)
+        $maxMin = [];
+        foreach ($kriteria as $kri) {
+            $max = 0;
+            $min = PHP_INT_MAX;
+            
+            foreach ($alternatif as $alt) {
+                $val = $nilai[$alt['id']][$kri['id']] ?? 0;
+                if ($val > $max) $max = $val;
+                if ($val > 0 && $val < $min) $min = $val;
+            }
+            
+            $maxMin[$kri['id']] = [
+                'max' => $max,
+                'min' => ($min > 0 && $min < PHP_INT_MAX) ? $min : 1
+            ];
+        }
+        
+        // Step 1: Normalize values (menggunakan cache)
         $normalized = [];
         foreach ($alternatif as $alt) {
             $normalized[$alt['id']] = [];
@@ -34,20 +52,10 @@ class WpCalculation {
                 $value = $nilai[$alt['id']][$kri['id']] ?? 0;
                 
                 if ($kri['tipe'] === 'benefit') {
-                    // For benefit: divide by max
-                    $max = 0;
-                    foreach ($alternatif as $a) {
-                        $val = $nilai[$a['id']][$kri['id']] ?? 0;
-                        if ($val > $max) $max = $val;
-                    }
+                    $max = $maxMin[$kri['id']]['max'];
                     $normalized[$alt['id']][$kri['id']] = $max > 0 ? $value / $max : 0;
                 } else {
-                    // For cost: divide min by value
-                    $min = PHP_INT_MAX;
-                    foreach ($alternatif as $a) {
-                        $val = $nilai[$a['id']][$kri['id']] ?? 0;
-                        if ($val > 0 && $val < $min) $min = $val;
-                    }
+                    $min = $maxMin[$kri['id']]['min'];
                     $normalized[$alt['id']][$kri['id']] = ($min > 0 && $value > 0) ? $min / $value : 0;
                 }
             }
@@ -84,38 +92,52 @@ class WpCalculation {
     }
     
     public function saveResults($analisis_id, $results) {
-        // Delete existing results
-        $stmt = $this->db->prepare("DELETE FROM hasil WHERE analisis_id = ?");
-        $stmt->bind_param("i", $analisis_id);
-        $stmt->execute();
-        
-        // Insert new results
-        $stmt = $this->db->prepare("INSERT INTO hasil (analisis_id, alternatif_id, nilai_wp, ranking) VALUES (?, ?, ?, ?)");
-        
-        foreach ($results as $result) {
-            $alternatif_id = $result['alternatif_id'];
-            $nilai_wp = $result['nilai_wp'];
-            $ranking = $result['ranking'];
+        try {
+            // Delete existing results
+            $stmt = $this->db->prepare("DELETE FROM hasil WHERE analisis_id = ?");
+            $stmt->bind_param("i", $analisis_id);
+            if (!$stmt->execute()) {
+                throw new Exception('Gagal menghapus hasil lama: ' . $stmt->error);
+            }
             
-            $stmt->bind_param("iidi", $analisis_id, $alternatif_id, $nilai_wp, $ranking);
-            $stmt->execute();
+            // Insert new results
+            $stmt = $this->db->prepare("INSERT INTO hasil (analisis_id, alternatif_id, nilai_wp, ranking) VALUES (?, ?, ?, ?)");
+            
+            foreach ($results as $result) {
+                $alternatif_id = $result['alternatif_id'];
+                $nilai_wp = $result['nilai_wp'];
+                $ranking = $result['ranking'];
+                
+                $stmt->bind_param("iidi", $analisis_id, $alternatif_id, $nilai_wp, $ranking);
+                if (!$stmt->execute()) {
+                    throw new Exception('Gagal menyimpan hasil: ' . $stmt->error);
+                }
+            }
+            
+            return true;
+        } catch (Exception $e) {
+            throw new Exception('Error saving results: ' . $e->getMessage());
         }
-        
-        return true;
     }
     
     public function getResults($analisis_id) {
-        $stmt = $this->db->prepare("
-            SELECT h.*, a.nama as alternatif_nama 
-            FROM hasil h
-            JOIN alternatif a ON h.alternatif_id = a.id
-            WHERE h.analisis_id = ?
-            ORDER BY h.ranking
-        ");
-        $stmt->bind_param("i", $analisis_id);
-        $stmt->execute();
-        $result = $stmt->get_result();
-        return $result->fetch_all(MYSQLI_ASSOC);
+        try {
+            $stmt = $this->db->prepare("
+                SELECT h.*, a.nama as alternatif_nama 
+                FROM hasil h
+                JOIN alternatif a ON h.alternatif_id = a.id
+                WHERE h.analisis_id = ?
+                ORDER BY h.ranking
+            ");
+            $stmt->bind_param("i", $analisis_id);
+            if (!$stmt->execute()) {
+                throw new Exception('Gagal mengambil hasil: ' . $stmt->error);
+            }
+            $result = $stmt->get_result();
+            return $result->fetch_all(MYSQLI_ASSOC);
+        } catch (Exception $e) {
+            throw new Exception('Error getting results: ' . $e->getMessage());
+        }
     }
 }
 ?>

@@ -29,28 +29,33 @@ class CalculateController {
     }
     
     public function calculate() {
-        $input = file_get_contents('php://input');
-        $data = json_decode($input, true);
-        
-        if (json_last_error() !== JSON_ERROR_NONE) {
-            echo json_encode(['success' => false, 'error' => 'Invalid JSON data']);
-            exit;
+        try {
+            $input = file_get_contents('php://input');
+            $data = json_decode($input, true);
+            
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                echo json_encode(['success' => false, 'error' => 'Invalid JSON data']);
+                exit;
+            }
+            
+            $analisis_id = intval($data['analisis_id'] ?? 0);
+            
+            if (!$analisis_id) {
+                echo json_encode(['success' => false, 'error' => 'Analisis ID tidak valid']);
+                exit;
+            }
+            
+            // Calculate WP
+            $results = $this->wpCalculation->calculate($analisis_id);
+            
+            // Save results
+            $this->wpCalculation->saveResults($analisis_id, $results);
+            
+            echo json_encode(['success' => true, 'results' => $results]);
+            
+        } catch (Exception $e) {
+            echo json_encode(['success' => false, 'error' => $e->getMessage()]);
         }
-        
-        $analisis_id = intval($data['analisis_id'] ?? 0);
-        
-        if (!$analisis_id) {
-            echo json_encode(['success' => false, 'error' => 'Analisis ID tidak valid']);
-            exit;
-        }
-        
-        // Calculate WP
-        $results = $this->wpCalculation->calculate($analisis_id);
-        
-        // Save results
-        $this->wpCalculation->saveResults($analisis_id, $results);
-        
-        echo json_encode(['success' => true, 'results' => $results]);
     }
     
     public function getResults($analisis_id) {

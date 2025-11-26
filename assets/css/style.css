@@ -1,3 +1,45 @@
+:root {
+    /* Primary (Headers, active steps, links) - Deep navy */
+    --primary: #232F5D;
+    --primary-dark: #1A2447;  /* Hover variant: darken 15% */
+    
+    /* Secondary (Forms, borders, table headers) - Mid blue */
+    --secondary: #4279B4;
+    --secondary-dark: #3568A0;  /* Hover variant */
+    
+    /* Accent (Buttons, badges, hovers) - Warm orange */
+    --accent: #FB7A2E;
+    --accent-dark: #E6681F;   /* Hover variant */
+    
+    /* Background (Body, cards) - Pure white */
+    --bg-light: #FFFFFF;
+    --bg-gray: #F8F9FA;  /* Light gray for subtle backgrounds */
+    
+    /* Text Primary (Main text, labels) - Same as primary */
+    --text-primary: #232F5D;
+    
+    /* Text Secondary (Muted, instructions) - Soft lavender-blue */
+    --text-secondary: #6876DF;
+    
+    /* Border - Using secondary for consistency */
+    --border: #4279B4;
+    --border-light: #E9ECEF;  /* Light border for subtle separators */
+    
+    /* Shadow - Using primary color */
+    --shadow: 0 2px 10px rgba(35, 47, 93, 0.1);
+}
+
+/* Dark mode optional (kalau mau extend nanti) */
+@media (prefers-color-scheme: dark) {
+    :root {
+        --bg-light: #1E1E1E;
+        --bg-gray: #2A2A2A;
+        --text-primary: #F8F9FA;
+        --text-secondary: #9BA5E8;
+        --border: #4A5A8A;
+    }
+}
+
 * {
     margin: 0;
     padding: 0;
@@ -6,7 +48,7 @@
 
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background-color: #f5f5f5;
+    background-color: var(--bg-gray);
     min-height: 100vh;
     display: flex;
     flex-direction: column;
@@ -40,8 +82,8 @@ body {
     width: 50px;
     height: 50px;
     border-radius: 50%;
-    background-color: #e0e0e0;
-    color: white;
+    background-color: var(--border-light);
+    color: var(--text-primary);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -51,17 +93,18 @@ body {
 }
 
 .step.active .step-circle {
-    background-color: #2196F3;
+    background-color: var(--primary);
+    color: white;
 }
 
 .step-label {
     font-size: 14px;
-    color: #666;
+    color: var(--text-secondary);
     text-align: center;
 }
 
 .step.active .step-label {
-    color: #2196F3;
+    color: var(--primary);
     font-weight: 600;
 }
 
@@ -70,7 +113,7 @@ body {
     background: white;
     border-radius: 8px;
     padding: 40px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    box-shadow: var(--shadow);
     display: none;
 }
 
@@ -79,13 +122,13 @@ body {
 }
 
 .form-card h2 {
-    color: #333;
+    color: var(--text-primary);
     margin-bottom: 10px;
     font-size: 24px;
 }
 
 .instruction {
-    color: #666;
+    color: var(--text-secondary);
     margin-bottom: 30px;
     font-size: 14px;
 }
@@ -98,7 +141,7 @@ body {
 .form-group label {
     display: block;
     margin-bottom: 8px;
-    color: #333;
+    color: var(--text-primary);
     font-weight: 500;
     font-size: 14px;
 }
@@ -108,7 +151,7 @@ body {
 .form-group select {
     width: 100%;
     padding: 12px;
-    border: 1px solid #ddd;
+    border: 1px solid var(--secondary);
     border-radius: 6px;
     font-size: 14px;
     transition: border-color 0.3s ease;
@@ -118,7 +161,7 @@ body {
 .form-group input[type="number"]:focus,
 .form-group select:focus {
     outline: none;
-    border-color: #2196F3;
+    border-color: var(--primary);
 }
 
 .radio-group {
@@ -130,14 +173,14 @@ body {
     align-items: center;
     gap: 10px;
     padding: 12px;
-    border: 1px solid #ddd;
+    border: 1px solid var(--secondary);
     border-radius: 6px;
     cursor: pointer;
     transition: all 0.3s ease;
 }
 
 .radio-label:hover {
-    background-color: #f5f5f5;
+    background-color: var(--bg-gray);
 }
 
 .radio-label input[type="radio"] {
@@ -146,7 +189,7 @@ body {
 }
 
 .radio-label input[type="radio"]:checked + span {
-    color: #2196F3;
+    color: var(--primary);
     font-weight: 600;
 }
 
@@ -154,7 +197,7 @@ body {
 .btn-continue {
     background: none;
     border: none;
-    color: #2196F3;
+    color: var(--accent);
     font-size: 16px;
     cursor: pointer;
     padding: 10px 0;
@@ -165,14 +208,14 @@ body {
 }
 
 .btn-continue:hover {
-    color: #1976D2;
+    color: var(--accent-dark);
     text-decoration: underline;
 }
 
 .btn-back {
-    background: #f5f5f5;
+    background: var(--bg-gray);
     border: none;
-    color: #666;
+    color: var(--text-secondary);
     font-size: 14px;
     cursor: pointer;
     padding: 12px 24px;
@@ -182,11 +225,11 @@ body {
 }
 
 .btn-back:hover {
-    background: #e0e0e0;
+    background: var(--border-light);
 }
 
 .btn-add {
-    background: #2196F3;
+    background: var(--accent);
     border: none;
     color: white;
     font-size: 14px;
@@ -198,7 +241,7 @@ body {
 }
 
 .btn-add:hover {
-    background: #1976D2;
+    background: var(--accent-dark);
 }
 
 .button-group {
@@ -208,7 +251,7 @@ body {
 }
 
 .button-group .btn-continue {
-    background: #2196F3;
+    background: var(--accent);
     color: white;
     padding: 12px 32px;
     border-radius: 6px;
@@ -218,23 +261,23 @@ body {
 }
 
 .button-group .btn-continue:hover {
-    background: #1976D2;
+    background: var(--accent-dark);
     text-decoration: none;
 }
 
 /* Alternatif and Kriteria Items */
 .kriteria-item {
-    background: #f9f9f9;
+    background: var(--bg-gray);
     padding: 20px;
     border-radius: 6px;
     margin-bottom: 15px;
-    border: 1px solid #e0e0e0;
+    border: 1px solid var(--secondary);
 }
 
 .alternatif-input {
     width: 100%;
     padding: 12px;
-    border: 1px solid #ddd;
+    border: 1px solid var(--secondary);
     border-radius: 6px;
     font-size: 14px;
 }
@@ -250,19 +293,19 @@ body {
 .values-table td {
     padding: 12px;
     text-align: left;
-    border-bottom: 1px solid #e0e0e0;
+    border-bottom: 1px solid var(--border-light);
 }
 
 .values-table th {
-    background-color: #f5f5f5;
+    background-color: var(--secondary);
+    color: white;
     font-weight: 600;
-    color: #333;
 }
 
 .values-table input {
     width: 100%;
     padding: 8px;
-    border: 1px solid #ddd;
+    border: 1px solid var(--secondary);
     border-radius: 4px;
 }
 
@@ -277,22 +320,22 @@ body {
 .results-table td {
     padding: 12px;
     text-align: left;
-    border-bottom: 1px solid #e0e0e0;
+    border-bottom: 1px solid var(--border-light);
 }
 
 .results-table th {
-    background-color: #2196F3;
+    background-color: var(--primary);
     color: white;
     font-weight: 600;
 }
 
 .results-table tr:hover {
-    background-color: #f5f5f5;
+    background-color: var(--bg-gray);
 }
 
 .ranking-badge {
     display: inline-block;
-    background: #2196F3;
+    background: var(--accent);
     color: white;
     padding: 4px 12px;
     border-radius: 12px;
@@ -302,7 +345,7 @@ body {
 
 /* Footer */
 footer {
-    background-color: #2196F3;
+    background-color: var(--primary);
     color: white;
     text-align: center;
     padding: 20px;
@@ -363,7 +406,7 @@ footer p {
 }
 
 .btn-new {
-    background: #2196F3;
+    background: var(--accent);
     color: white;
     padding: 12px 24px;
     border-radius: 6px;
@@ -373,14 +416,14 @@ footer p {
 }
 
 .btn-new:hover {
-    background: #1976D2;
+    background: var(--accent-dark);
 }
 
 .table-container {
     background: white;
     border-radius: 8px;
     padding: 20px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    box-shadow: var(--shadow);
     overflow-x: auto;
 }
 
@@ -392,16 +435,17 @@ table {
 th, td {
     padding: 12px;
     text-align: left;
-    border-bottom: 1px solid #e0e0e0;
+    border-bottom: 1px solid var(--border-light);
 }
 
 th {
-    background-color: #f5f5f5;
+    background-color: var(--secondary);
+    color: white;
     font-weight: 600;
 }
 
 tr:hover {
-    background-color: #f9f9f9;
+    background-color: var(--bg-gray);
 }
 
 .action-buttons {
@@ -410,12 +454,17 @@ tr:hover {
 }
 
 .btn-edit {
-    background: #4CAF50;
+    background: var(--secondary);
     color: white;
     padding: 6px 12px;
     border-radius: 4px;
     text-decoration: none;
     font-size: 12px;
+    transition: background 0.3s;
+}
+
+.btn-edit:hover {
+    background: var(--secondary-dark);
 }
 
 .btn-delete {
@@ -427,20 +476,30 @@ tr:hover {
     font-size: 12px;
     border: none;
     cursor: pointer;
+    transition: background 0.3s;
+}
+
+.btn-delete:hover {
+    background: #D32F2F;
 }
 
 .btn-view {
-    background: #2196F3;
+    background: var(--accent);
     color: white;
     padding: 6px 12px;
     border-radius: 4px;
     text-decoration: none;
     font-size: 12px;
+    transition: background 0.3s;
+}
+
+.btn-view:hover {
+    background: var(--accent-dark);
 }
 
 .empty-state {
     text-align: center;
     padding: 40px;
-    color: #666;
+    color: var(--text-secondary);
 }
 

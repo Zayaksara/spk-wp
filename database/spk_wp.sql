@@ -28,7 +28,7 @@ CREATE TABLE IF NOT EXISTS kriteria (
     id INT AUTO_INCREMENT PRIMARY KEY,
     analisis_id INT NOT NULL,
     nama VARCHAR(255) NOT NULL,
-    bobot DECIMAL(5,2) NOT NULL,
+    bobot DECIMAL(6,4) NOT NULL,
     tipe ENUM('benefit', 'cost') NOT NULL DEFAULT 'benefit',
     urutan INT DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

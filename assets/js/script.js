@@ -168,7 +168,7 @@ function addKriteria() {
         </div>
         <div class="form-group">
             <label>Bobot</label>
-            <input type="text" class="kriteria-bobot" placeholder="0,00 atau 0.00" pattern="[0-9]+([,\.][0-9]+)?" required>
+            <input type="text" class="kriteria-bobot" placeholder="0,00 atau 0.00" pattern="^\d+([,\.]\d{0,2})?$" required>
         </div>
         <div class="form-group">
             <label>Tipe</label>
@@ -225,7 +225,7 @@ function buildNilaiForm() {
         kriteria.forEach((kri, kriIndex) => {
             const existingValue = nilai[altIndex] && nilai[altIndex][kriIndex] ? nilai[altIndex][kriIndex] : '';
             const displayValue = existingValue ? existingValue.toString().replace('.', ',') : '';
-            html += `<td><input type="text" class="nilai-input" data-alt="${altIndex}" data-kri="${kriIndex}" placeholder="0" pattern="[0-9]+([,\.][0-9]+)?" value="${displayValue}" required></td>`;
+            html += `<td><input type="text" class="nilai-input" data-alt="${altIndex}" data-kri="${kriIndex}" placeholder="0" pattern="^\d+([,\.]\d{0,2})?$" value="${displayValue}" required></td>`;
         });
         html += '</tr>';
     });
@@ -277,65 +277,78 @@ function calculateWP() {
 
 // Save data to database
 async function saveToDatabase() {
-    const analisisId = document.getElementById('analisisId')?.value || null;
-    const data = {
-        id: analisisId ? parseInt(analisisId) : null,
-        judul: formData.judulAnalisis,
-        metode: formData.metode,
-        alternatif: formData.alternatif,
-        kriteria: formData.kriteria,
-        nilai: formData.nilai
-    };
-    
-    // Convert nilai format for API
-    const nilaiFormatted = {};
-    Object.keys(data.nilai).forEach(altIndex => {
-        Object.keys(data.nilai[altIndex]).forEach(kriIndex => {
-            // Get actual IDs from formData if editing
-            const altId = formData.alternatifIds ? formData.alternatifIds[altIndex] : null;
-            const kriId = formData.kriteriaIds ? formData.kriteriaIds[kriIndex] : null;
-            
-            if (altId && kriId) {
-                if (!nilaiFormatted[altId]) {
-                    nilaiFormatted[altId] = {};
+    try {
+        const analisisId = document.getElementById('analisisId')?.value || null;
+        const data = {
+            id: analisisId ? parseInt(analisisId) : null,
+            judul: formData.judulAnalisis,
+            metode: formData.metode,
+            alternatif: formData.alternatif,
+            kriteria: formData.kriteria,
+            nilai: formData.nilai
+        };
+        
+        // Save draft to localStorage
+        localStorage.setItem('wp_draft', JSON.stringify(data));
+        
+        // Convert nilai format for API
+        const nilaiFormatted = {};
+        Object.keys(data.nilai).forEach(altIndex => {
+            Object.keys(data.nilai[altIndex]).forEach(kriIndex => {
+                // Get actual IDs from formData if editing
+                const altId = formData.alternatifIds ? formData.alternatifIds[altIndex] : null;
+                const kriId = formData.kriteriaIds ? formData.kriteriaIds[kriIndex] : null;
+                
+                if (altId && kriId) {
+                    if (!nilaiFormatted[altId]) {
+                        nilaiFormatted[altId] = {};
+                    }
+                    nilaiFormatted[altId][kriId] = data.nilai[altIndex][kriIndex];
+                } else {
+                    // For new entries, use index
+                    if (!nilaiFormatted[altIndex]) {
+                        nilaiFormatted[altIndex] = {};
+                    }
+                    nilaiFormatted[altIndex][kriIndex] = data.nilai[altIndex][kriIndex];
                 }
-                nilaiFormatted[altId][kriId] = data.nilai[altIndex][kriIndex];
-            } else {
-                // For new entries, use index
-                if (!nilaiFormatted[altIndex]) {
-                    nilaiFormatted[altIndex] = {};
-                }
-                nilaiFormatted[altIndex][kriIndex] = data.nilai[altIndex][kriIndex];
-            }
+            });
         });
-    });
-    data.nilai = nilaiFormatted;
-    
-    const url = 'controllers/InputController.php?action=save';
-    const method = 'POST';
-    
-    const response = await fetch(url, {
-        method: method,
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(data)
-    });
-    
-    const result = await response.json();
-    
-    if (result.success) {
-        if (result.id) {
-            formData.id = result.id;
-            const analisisIdInput = document.getElementById('analisisId');
-            if (analisisIdInput) {
-                analisisIdInput.value = result.id;
-            }
+        data.nilai = nilaiFormatted;
+        
+        const url = 'controllers/InputController.php?action=save';
+        
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        });
+        
+        if (!response.ok) {
+            throw new Error('Network response was not ok: ' + response.status);
         }
-        return result;
-    } else {
-        const errorMsg = result.error || 'Gagal menyimpan data ke database';
-        throw new Error(errorMsg);
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            // Clear draft on success
+            localStorage.removeItem('wp_draft');
+            if (result.id) {
+                formData.id = result.id;
+                const analisisIdInput = document.getElementById('analisisId');
+                if (analisisIdInput) {
+                    analisisIdInput.value = result.id;
+                }
+            }
+            return result;
+        } else {
+            const errorMsg = result.error || 'Gagal menyimpan data ke database';
+            throw new Error(errorMsg);
+        }
+    } catch (error) {
+        console.error('Save error:', error);
+        throw error;
     }
 }
 
@@ -343,18 +356,27 @@ async function saveToDatabase() {
 async function saveResults(results) {
     if (!formData.id) return;
     
-    // Save results via CalculateController
-    const hasilResponse = await fetch('controllers/CalculateController.php?action=calculate', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-            analisis_id: formData.id
-        })
-    });
-    
-    return await hasilResponse.json();
+    try {
+        // Save results via CalculateController
+        const hasilResponse = await fetch('controllers/CalculateController.php?action=calculate', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                analisis_id: formData.id
+            })
+        });
+        
+        if (!hasilResponse.ok) {
+            throw new Error('Network response was not ok: ' + hasilResponse.status);
+        }
+        
+        return await hasilResponse.json();
+    } catch (error) {
+        console.error('Error saving results:', error);
+        throw error;
+    }
 }
 
 function performWPCalculation() {
@@ -485,7 +507,7 @@ function resetForm() {
             </div>
             <div class="form-group">
                 <label>Bobot</label>
-                <input type="text" class="kriteria-bobot" placeholder="0,00 atau 0.00" pattern="[0-9]+([,\.][0-9]+)?" required>
+                <input type="text" class="kriteria-bobot" placeholder="0,00 atau 0.00" pattern="^\d+([,\.]\d{0,2})?$" required>
             </div>
             <div class="form-group">
                 <label>Tipe</label>
@@ -587,6 +609,32 @@ function loadEditData(data) {
 // Initialize
 document.addEventListener('DOMContentLoaded', function() {
     showStep(1);
+    
+    // Load draft from localStorage if exists
+    const draft = localStorage.getItem('wp_draft');
+    if (draft && !document.getElementById('analisisId')?.value) {
+        try {
+            const draftData = JSON.parse(draft);
+            if (confirm('Ada draft yang tersimpan. Ingin melanjutkan?')) {
+                // Load draft data ke form
+                if (draftData.judul) {
+                    document.getElementById('judulAnalisis').value = draftData.judul;
+                    formData.judulAnalisis = draftData.judul;
+                }
+                if (draftData.metode) {
+                    const radio = document.querySelector(`input[name="metode"][value="${draftData.metode}"]`);
+                    if (radio) radio.checked = true;
+                    formData.metode = draftData.metode;
+                }
+                // Note: Alternatif, kriteria, dan nilai bisa di-load lebih lanjut jika diperlukan
+            } else {
+                localStorage.removeItem('wp_draft');
+            }
+        } catch (e) {
+            console.error('Error loading draft:', e);
+            localStorage.removeItem('wp_draft');
+        }
+    }
     
     // Add event listeners for number inputs to handle comma
     document.addEventListener('input', function(e) {

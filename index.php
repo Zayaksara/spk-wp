@@ -1,59 +1,45 @@
 <?php
-// Router - Simple MVC Router
+// Router - Simple MVC Router with Array Map
 require_once __DIR__ . '/config/config.php';
 
-// Get action and id from URL
+// Route mapping
+$routes = [
+    'landing' => ['controller' => 'LandingController', 'method' => 'index', 'needs_id' => false],
+    'dashboard' => ['controller' => 'DashboardController', 'method' => 'index', 'needs_id' => false],
+    'index' => ['controller' => 'HomeController', 'method' => 'index', 'needs_id' => false],
+    'create' => ['controller' => 'HomeController', 'method' => 'create', 'needs_id' => false],
+    'edit' => ['controller' => 'HomeController', 'method' => 'edit', 'needs_id' => true],
+    'view' => ['controller' => 'ResultController', 'method' => 'view', 'needs_id' => true],
+    'delete' => ['controller' => 'HomeController', 'method' => 'delete', 'needs_id' => true]
+];
+
 $action = $_GET['action'] ?? 'landing';
 $id = isset($_GET['id']) ? intval($_GET['id']) : 0;
 
-// Route to appropriate controller
-switch ($action) {
-    case 'landing':
-        require_once __DIR__ . '/controllers/LandingController.php';
-        $controller = new LandingController();
-        $controller->index();
-        break;
+if (isset($routes[$action])) {
+    $route = $routes[$action];
+    $controllerFile = __DIR__ . '/controllers/' . $route['controller'] . '.php';
+    
+    if (file_exists($controllerFile)) {
+        require_once $controllerFile;
+        $controllerClass = $route['controller'];
+        $controller = new $controllerClass();
         
-    case 'dashboard':
-        require_once __DIR__ . '/controllers/DashboardController.php';
-        $controller = new DashboardController();
-        $controller->index();
-        break;
-        
-    case 'index':
-        require_once __DIR__ . '/controllers/HomeController.php';
-        $controller = new HomeController();
-        $controller->index();
-        break;
-        
-    case 'create':
-        require_once __DIR__ . '/controllers/HomeController.php';
-        $controller = new HomeController();
-        $controller->create();
-        break;
-        
-    case 'edit':
-        require_once __DIR__ . '/controllers/HomeController.php';
-        $controller = new HomeController();
-        $controller->edit($id);
-        break;
-        
-    case 'view':
-        require_once __DIR__ . '/controllers/ResultController.php';
-        $controller = new ResultController();
-        $controller->view($id);
-        break;
-        
-    case 'delete':
-        require_once __DIR__ . '/controllers/HomeController.php';
-        $controller = new HomeController();
-        $controller->delete($id);
-        break;
-        
-    default:
-        require_once __DIR__ . '/controllers/LandingController.php';
-        $controller = new LandingController();
-        $controller->index();
-        break;
+        if ($route['needs_id']) {
+            if ($id <= 0) {
+                http_response_code(400);
+                die('Invalid ID parameter');
+            }
+            $controller->{$route['method']}($id);
+        } else {
+            $controller->{$route['method']}();
+        }
+    } else {
+        http_response_code(404);
+        die('Controller not found');
+    }
+} else {
+    http_response_code(404);
+    die('Page not found');
 }
 ?>
