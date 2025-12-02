@@ -116,9 +116,10 @@ require_once __DIR__ . '/layouts/header.php';
         <!-- Step Navigation -->
         <div class="step-nav" style="display: flex; gap: 10px; margin-bottom: 30px; flex-wrap: wrap;">
             <button class="step-btn active" onclick="showResultStep(1)">1. Data Awal</button>
-            <button class="step-btn" onclick="showResultStep(2)">2. Normalisasi</button>
-            <button class="step-btn" onclick="showResultStep(3)">3. Perhitungan WP</button>
-            <button class="step-btn" onclick="showResultStep(4)">4. Ranking</button>
+            <button class="step-btn" onclick="showResultStep(2)">2. Normalisasi Bobot</button>
+            <button class="step-btn" onclick="showResultStep(3)">3. Vektor S</button>
+            <button class="step-btn" onclick="showResultStep(4)">4. Vektor V</button>
+            <button class="step-btn" onclick="showResultStep(5)">5. Ranking</button>
         </div>
         
         <!-- Step 1: Data Awal -->
@@ -136,7 +137,6 @@ require_once __DIR__ . '/layouts/header.php';
                             <th>Kriteria</th>
                             <th>Bobot</th>
                             <th>Tipe</th>
-                            <th>Max/Min</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -148,13 +148,6 @@ require_once __DIR__ . '/layouts/header.php';
                                 <span style="padding: 6px 12px; border-radius: 6px; background: <?= $kri['tipe'] == 'benefit' ? 'linear-gradient(135deg, #4279B4 0%, #3568A0 100%)' : 'linear-gradient(135deg, #FB7A2E 0%, #E6681F 100%)' ?>; color: white; font-size: 12px; font-weight: 600; box-shadow: 0 2px 6px rgba(<?= $kri['tipe'] == 'benefit' ? '66, 121, 180' : '251, 122, 46' ?>, 0.3);">
                                     <?= ucfirst($kri['tipe']) ?>
                                 </span>
-                            </td>
-                            <td>
-                                <?php if ($kri['tipe'] == 'benefit'): ?>
-                                    <span style="color: var(--secondary); font-weight: 600;">Max: <?= number_format($calculationDetails['maxMin'][$kri['id']]['max'], 2) ?></span>
-                                <?php else: ?>
-                                    <span style="color: var(--accent); font-weight: 600;">Min: <?= number_format($calculationDetails['maxMin'][$kri['id']]['min'], 2) ?></span>
-                                <?php endif; ?>
                             </td>
                         </tr>
                         <?php endforeach; ?>
@@ -187,139 +180,269 @@ require_once __DIR__ . '/layouts/header.php';
             </div>
             </div>
             
-        <!-- Step 2: Normalisasi -->
+        <!-- Step 2: Normalisasi Bobot -->
         <div id="result-step-2" class="calc-step" style="display: none;">
-            <h4>🔄 Step 2: Normalisasi Nilai</h4>
+            <h4>⚖️ Step 2: Normalisasi Bobot</h4>
             <p style="color: var(--text-secondary); margin-bottom: 25px; line-height: 1.6;">
-                Normalisasi dilakukan untuk menyamakan skala nilai. Untuk kriteria <strong style="color: var(--secondary);">benefit</strong>: nilai dibagi dengan nilai maksimum. 
-                Untuk kriteria <strong style="color: var(--accent);">cost</strong>: nilai minimum dibagi dengan nilai.
+                Normalisasi bobot dilakukan jika total bobot ≠ 1. Bobot bertanda: <strong style="color: var(--secondary);">benefit = positif (+)</strong>, 
+                <strong style="color: var(--accent);">cost = negatif (-)</strong>.
             </p>
             
+            <?php 
+            $totalBobot = array_sum(array_column($calculationDetails['kriteria'], 'bobot'));
+            $needsNormalization = abs($totalBobot - 1.0) > 0.0001;
+            $normalizedBobot = isset($calculationDetails['normalizedBobot']) ? $calculationDetails['normalizedBobot'] : [];
+            $signedBobot = isset($calculationDetails['signedBobot']) ? $calculationDetails['signedBobot'] : [];
+            ?>
+            
             <div class="formula-highlight">
-                <strong>Rumus Normalisasi:</strong><br>
-                <?php foreach ($calculationDetails['kriteria'] as $kri): ?>
-                    <?php if ($kri['tipe'] == 'benefit'): ?>
-                        <strong><?= htmlspecialchars($kri['nama']) ?> (benefit):</strong> Normalisasi = Nilai ÷ <?= number_format($calculationDetails['maxMin'][$kri['id']]['max'], 2) ?><br>
-                    <?php else: ?>
-                        <strong><?= htmlspecialchars($kri['nama']) ?> (cost):</strong> Normalisasi = <?= number_format($calculationDetails['maxMin'][$kri['id']]['min'], 2) ?> ÷ Nilai<br>
-                    <?php endif; ?>
-                <?php endforeach; ?>
+                <strong>Total Bobot:</strong> <?= number_format($totalBobot, 4) ?>
+                <?php if ($needsNormalization): ?>
+                    ≠ 1, maka dilakukan normalisasi: <strong>Wj_normalized = Wj / Σ(Wj)</strong>
+                <?php else: ?>
+                    = 1, bobot sudah ternormalisasi
+                <?php endif; ?>
             </div>
             
             <div class="value-card">
-                    <table class="values-table" style="width: 100%;">
-                        <thead>
-                            <tr>
-                                <th>Alternatif</th>
-                                <?php foreach ($calculationDetails['kriteria'] as $kri): ?>
-                                <th>
-                                    <?= htmlspecialchars($kri['nama']) ?><br>
-                                    <small style="font-weight: normal; opacity: 0.7;">
-                                        <?php if ($kri['tipe'] == 'benefit'): ?>
-                                            (÷ <?= number_format($calculationDetails['maxMin'][$kri['id']]['max'], 2) ?>)
-                                        <?php else: ?>
-                                            (<?= number_format($calculationDetails['maxMin'][$kri['id']]['min'], 2) ?> ÷ nilai)
-                                        <?php endif; ?>
-                                    </small>
-                                </th>
-                                <?php endforeach; ?>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php foreach ($calculationDetails['alternatif'] as $alt): ?>
-                            <tr>
-                                <td><strong><?= htmlspecialchars($alt['nama']) ?></strong></td>
-                                <?php foreach ($calculationDetails['kriteria'] as $kri): ?>
-                                <td>
-                                    <?php 
-                                    $nilaiAwal = $calculationDetails['nilai'][$alt['id']][$kri['id']] ?? 0;
-                                    $normalized = $calculationDetails['normalized'][$alt['id']][$kri['id']] ?? 0;
-                                    ?>
-                                    <div style="text-align: center;">
-                                        <div style="font-size: 11px; color: var(--text-secondary); margin-bottom: 5px;">
-                                            Nilai: <?= number_format($nilaiAwal, 2) ?>
-                                        </div>
-                                        <div style="font-size: 20px; font-weight: bold; color: var(--accent); padding: 8px; background: rgba(251, 122, 46, 0.1); border-radius: 6px;">
-                                            <?= number_format($normalized, 4) ?>
-                                        </div>
-                                    </div>
-                                </td>
-                                <?php endforeach; ?>
-                            </tr>
-                            <?php endforeach; ?>
-                        </tbody>
-                    </table>
-                </div>
+                <table class="values-table" style="width: 100%;">
+                    <thead>
+                        <tr>
+                            <th>Kriteria</th>
+                            <th>Bobot Awal</th>
+                            <th>Bobot Normalisasi</th>
+                            <th>Tipe</th>
+                            <th>Bobot Bertanda</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($calculationDetails['kriteria'] as $kri): 
+                            $normBobot = isset($normalizedBobot[$kri['id']]) ? $normalizedBobot[$kri['id']] : $kri['bobot'];
+                            $signed = isset($signedBobot[$kri['id']]) ? $signedBobot[$kri['id']] : ($kri['tipe'] == 'benefit' ? $normBobot : -$normBobot);
+                            $sign = $signed >= 0 ? '+' : '';
+                        ?>
+                        <tr style="transition: all 0.3s;">
+                            <td><strong><?= htmlspecialchars($kri['nama']) ?></strong></td>
+                            <td><?= number_format($kri['bobot'], 4) ?></td>
+                            <td><?= number_format($normBobot, 4) ?></td>
+                            <td>
+                                <span style="padding: 6px 12px; border-radius: 6px; background: <?= $kri['tipe'] == 'benefit' ? 'linear-gradient(135deg, #4279B4 0%, #3568A0 100%)' : 'linear-gradient(135deg, #FB7A2E 0%, #E6681F 100%)' ?>; color: white; font-size: 12px; font-weight: 600;">
+                                    <?= ucfirst($kri['tipe']) ?>
+                                </span>
+                            </td>
+                            <td style="color: <?= $signed >= 0 ? 'var(--accent)' : '#e74c3c' ?>; font-weight: bold; font-size: 16px;">
+                                <?= $sign ?><?= number_format($signed, 4) ?>
+                            </td>
+                        </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
             </div>
+        </div>
             
-        <!-- Step 3: Perhitungan WP -->
+        <!-- Step 3: Perhitungan S Vector -->
         <div id="result-step-3" class="calc-step" style="display: none;">
-            <h4>🧮 Step 3: Perhitungan Weighted Product (WP)</h4>
-            <p style="color: var(--text-secondary); margin-bottom: 25px; line-height: 1.6;">
-                Rumus WP: <strong style="color: var(--accent);">WP = ∏(Nilai Normalisasi^Bobot)</strong> untuk setiap kriteria, dimana ∏ adalah perkalian semua kriteria.
+            <h4>📐 Step 3: Perhitungan Vektor S</h4>
+            <p style="color: var(--text-secondary); margin-bottom: 25px; line-height: 1.8;">
+                <strong style="color: var(--primary);">Rumus S Vector:</strong><br>
+                Si = ∏(Nilai Asli^Wj_final) untuk setiap kriteria<br>
+                <strong style="color: var(--accent);">Tidak ada normalisasi min/max</strong>, langsung pakai nilai asli<br>
+                Dimana:<br>
+                • Wj_final adalah bobot bertanda (benefit = +, cost = -)<br>
+                • ∏ adalah perkalian semua kriteria<br><br>
+                <strong style="color: var(--accent);">Catatan:</strong><br>
+                • Cost dengan bobot negatif akan membuat nilai yang lebih kecil menjadi lebih baik<br>
+                • Benefit dengan bobot positif akan membuat nilai yang lebih besar menjadi lebih baik
             </p>
             
-            <?php foreach ($calculationDetails['wpDetails'] as $detail): ?>
-            <div class="wp-detail-card">
-                <h5>
+            <?php 
+            // Check if data exists and has steps
+            $hasValidData = false;
+            if (isset($calculationDetails['wpDetails']) && !empty($calculationDetails['wpDetails'])) {
+                foreach ($calculationDetails['wpDetails'] as $detail) {
+                    if (isset($detail['steps']) && !empty($detail['steps'])) {
+                        $hasValidData = true;
+                        break;
+                    }
+                }
+            }
+            
+            if (!$hasValidData): 
+            ?>
+                <div style="background: linear-gradient(135deg, #fff3cd 0%, #ffe69c 100%); border: 2px solid #ffc107; padding: 25px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 4px 12px rgba(255, 193, 7, 0.3);">
+                    <h5 style="color: #856404; margin-bottom: 15px; font-size: 18px;">⚠️ Data Detail Perhitungan Tidak Tersedia</h5>
+                    <p style="color: #856404; margin: 0; line-height: 1.6;">
+                        Data perhitungan detail belum tersedia untuk analisis ini. <br>
+                        <strong>Solusi:</strong> Silakan edit analisis ini dan klik tombol "Hitung" lagi untuk menghitung ulang dengan metode baru (6 tahapan lengkap).
+                    </p>
+                </div>
+            <?php else: ?>
+            <?php foreach ($calculationDetails['wpDetails'] as $detail): 
+                $nilaiS = isset($detail['nilai_s']) ? $detail['nilai_s'] : (isset($detail['nilai_wp']) ? $detail['nilai_wp'] : 0);
+                
+                // Check if steps exists
+                if (!isset($detail['steps']) || empty($detail['steps'])) {
+                    continue; // Skip if no steps
+                }
+            ?>
+            <div class="wp-detail-card" style="background: white; border-radius: 12px; padding: 25px; margin-bottom: 25px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                <h5 style="color: var(--primary); margin-bottom: 20px; font-size: 18px;">
                     🎯 Alternatif: <strong><?= htmlspecialchars($detail['alternatif_nama']) ?></strong>
                 </h5>
                 
-                <div class="calculation-box">
-                    <code>
+                <div class="calculation-box" style="background: var(--bg-gray); padding: 20px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid var(--accent);">
+                    <code style="display: block;">
                         <?php 
                         $formulaParts = [];
                         foreach ($detail['steps'] as $step) {
-                            $formulaParts[] = "(" . number_format($step['normalized'], 4) . "^" . number_format($step['bobot'], 4) . ")";
+                            if (!isset($step['nilai_asli'])) continue;
+                            $bobotSigned = isset($step['bobot_signed']) ? $step['bobot_signed'] : (isset($step['bobot']) ? $step['bobot'] : 0);
+                            $sign = $bobotSigned >= 0 ? '+' : '';
+                            $formulaParts[] = "(" . number_format($step['nilai_asli'], 4) . "^" . $sign . number_format($bobotSigned, 4) . ")";
                         }
                         ?>
-                        <div style="margin-bottom: 12px; color: var(--text-primary);">
-                            <strong style="color: var(--primary);">WP =</strong> <?= implode(' × ', $formulaParts) ?>
+                        <div style="margin-bottom: 12px; color: var(--text-primary); font-size: 15px;">
+                            <strong style="color: var(--primary);">S_<?= htmlspecialchars($detail['alternatif_nama']) ?> =</strong> <?= implode(' × ', $formulaParts) ?>
                         </div>
-                        <div style="margin-bottom: 12px; color: var(--text-secondary);">
+                        <div style="margin-bottom: 12px; color: var(--text-secondary); font-size: 14px;">
                             <?php 
                             $calcParts = [];
                             foreach ($detail['steps'] as $step) {
                                 $calcParts[] = number_format($step['powered'], 6);
                             }
                             ?>
-                            <strong style="color: var(--primary);">WP =</strong> <?= implode(' × ', $calcParts) ?>
+                            <strong style="color: var(--primary);">S_<?= htmlspecialchars($detail['alternatif_nama']) ?> =</strong> <?= implode(' × ', $calcParts) ?>
                         </div>
-                        <div class="calculation-result">
-                            <strong>WP = <?= number_format($detail['nilai_wp'], 6) ?></strong>
+                        <div class="calculation-result" style="font-size: 18px; font-weight: bold; color: var(--accent); padding-top: 10px; border-top: 2px solid var(--border-light);">
+                            <strong>S_<?= htmlspecialchars($detail['alternatif_nama']) ?> = <?= number_format($nilaiS, 6) ?></strong>
                         </div>
                     </code>
                 </div>
                     
-                    <table class="values-table" style="width: 100%; font-size: 13px;">
+                    <table class="values-table" style="width: 100%; font-size: 14px;">
                         <thead>
                             <tr>
-                                <th>Kriteria</th>
-                                <th>Normalisasi</th>
-                                <th>Bobot</th>
-                                <th>Normalisasi^Bobot</th>
+                                <th style="background: var(--secondary); color: white; padding: 12px;">Kriteria</th>
+                                <th style="background: var(--secondary); color: white; padding: 12px;">Nilai Asli</th>
+                                <th style="background: var(--secondary); color: white; padding: 12px;">Bobot Bertanda</th>
+                                <th style="background: var(--secondary); color: white; padding: 12px;">Nilai^Bobot</th>
                             </tr>
                         </thead>
                         <tbody>
-                            <?php foreach ($detail['steps'] as $step): ?>
-                            <tr style="transition: all 0.3s;">
-                                <td><strong><?= htmlspecialchars($step['kriteria_nama']) ?></strong></td>
-                                <td><?= number_format($step['normalized'], 4) ?></td>
-                                <td><?= number_format($step['bobot'], 4) ?></td>
-                                <td style="color: var(--accent); font-weight: bold; font-size: 14px;"><?= number_format($step['powered'], 6) ?></td>
+                            <?php foreach ($detail['steps'] as $step): 
+                                if (!isset($step['nilai_asli']) || !isset($step['kriteria_nama'])) continue;
+                                $bobotSigned = isset($step['bobot_signed']) ? $step['bobot_signed'] : (isset($step['bobot']) ? $step['bobot'] : 0);
+                                $sign = $bobotSigned >= 0 ? '+' : '';
+                                $powered = isset($step['powered']) ? $step['powered'] : pow($step['nilai_asli'], $bobotSigned);
+                            ?>
+                            <tr style="transition: all 0.3s;" onmouseover="this.style.background='var(--bg-gray)'" onmouseout="this.style.background='white'">
+                                <td style="padding: 12px;"><strong><?= htmlspecialchars($step['kriteria_nama']) ?></strong></td>
+                                <td style="padding: 12px;"><?= number_format($step['nilai_asli'], 4) ?></td>
+                                <td style="padding: 12px; color: <?= $bobotSigned >= 0 ? 'var(--accent)' : '#e74c3c' ?>; font-weight: bold; font-size: 15px;"><?= $sign ?><?= number_format($bobotSigned, 4) ?></td>
+                                <td style="padding: 12px; color: var(--accent); font-weight: bold; font-size: 15px;"><?= number_format($powered, 6) ?></td>
                             </tr>
                             <?php endforeach; ?>
                         </tbody>
                     </table>
                 </div>
                 <?php endforeach; ?>
+            <?php endif; ?>
             </div>
             
-        <!-- Step 4: Ranking -->
+        <!-- Step 5: Perhitungan V Vector -->
         <div id="result-step-4" class="calc-step" style="display: none;">
-            <h4>🏆 Step 4: Ranking Hasil</h4>
+            <h4>📊 Step 4: Perhitungan Vektor V</h4>
+            <p style="color: var(--text-secondary); margin-bottom: 25px; line-height: 1.8;">
+                <strong style="color: var(--primary);">Rumus V Vector:</strong><br>
+                Vi = Si / Σ(Si) untuk semua alternatif<br>
+                V Vector adalah normalisasi dari S Vector
+            </p>
+            
+            <?php 
+            // Check if data exists
+            $hasValidData = false;
+            if (isset($calculationDetails['wpDetails']) && !empty($calculationDetails['wpDetails'])) {
+                $hasValidData = true;
+            }
+            
+            if (!$hasValidData):
+            ?>
+                <div style="background: linear-gradient(135deg, #fff3cd 0%, #ffe69c 100%); border: 2px solid #ffc107; padding: 25px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 4px 12px rgba(255, 193, 7, 0.3);">
+                    <h5 style="color: #856404; margin-bottom: 15px; font-size: 18px;">⚠️ Data Detail Perhitungan Tidak Tersedia</h5>
+                    <p style="color: #856404; margin: 0; line-height: 1.6;">
+                        Data perhitungan detail belum tersedia untuk analisis ini. <br>
+                        <strong>Solusi:</strong> Silakan edit analisis ini dan klik tombol "Hitung" lagi untuk menghitung ulang dengan metode baru (6 tahapan lengkap).
+                    </p>
+                </div>
+            <?php else: 
+            $totalS = isset($calculationDetails['totalS']) ? $calculationDetails['totalS'] : 0;
+            if ($totalS == 0) {
+                // Calculate total S from wpDetails
+                foreach ($calculationDetails['wpDetails'] as $detail) {
+                    $nilaiS = isset($detail['nilai_s']) ? $detail['nilai_s'] : (isset($detail['nilai_wp']) ? $detail['nilai_wp'] : 0);
+                    $totalS += $nilaiS;
+                }
+            }
+            ?>
+            
+            <div class="formula-highlight" style="background: linear-gradient(135deg, var(--accent) 0%, var(--accent-dark) 100%); color: white; padding: 20px; border-radius: 8px; margin-bottom: 25px; box-shadow: 0 4px 12px rgba(251, 122, 46, 0.3);">
+                <strong style="font-size: 18px;">Total S (Σ(Si)): <?= number_format($totalS, 6) ?></strong>
+            </div>
+            
+            <div class="value-card" style="background: white; border-radius: 12px; padding: 25px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                <table class="values-table" style="width: 100%;">
+                    <thead>
+                        <tr>
+                            <th style="background: var(--secondary); color: white; padding: 12px;">Alternatif</th>
+                            <th style="background: var(--secondary); color: white; padding: 12px;">Nilai S</th>
+                            <th style="background: var(--secondary); color: white; padding: 12px;">Perhitungan V</th>
+                            <th style="background: var(--secondary); color: white; padding: 12px;">Nilai V</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($calculationDetails['wpDetails'] as $detail): 
+                            $nilaiS = isset($detail['nilai_s']) ? $detail['nilai_s'] : $detail['nilai_wp'];
+                            $nilaiV = isset($detail['nilai_v']) ? $detail['nilai_v'] : ($totalS > 0 ? $nilaiS / $totalS : 0);
+                        ?>
+                        <tr style="transition: all 0.3s;" onmouseover="this.style.background='var(--bg-gray)'; this.style.transform='scale(1.01)'" onmouseout="this.style.background='white'; this.style.transform='scale(1)'">
+                            <td style="padding: 12px;"><strong style="font-size: 16px;"><?= htmlspecialchars($detail['alternatif_nama']) ?></strong></td>
+                            <td style="padding: 12px; font-weight: 500;"><?= number_format($nilaiS, 6) ?></td>
+                            <td style="padding: 12px; font-family: monospace; font-size: 13px; color: var(--text-secondary);"><?= number_format($nilaiS, 6) ?> / <?= number_format($totalS, 6) ?></td>
+                            <td style="padding: 12px; color: var(--accent); font-weight: bold; font-size: 18px;"><?= number_format($nilaiV, 6) ?></td>
+                        </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+                
+                <!-- Contoh Perhitungan Detail -->
+                <div style="background: var(--bg-gray); padding: 20px; border-radius: 8px; margin-top: 25px; border-left: 4px solid var(--accent);">
+                    <h5 style="color: var(--primary); margin-bottom: 15px; font-size: 16px;">📝 Contoh Perhitungan:</h5>
+                    <?php 
+                    $count = 0;
+                    foreach ($calculationDetails['wpDetails'] as $detail): 
+                        if ($count >= 3) break;
+                        $nilaiS = isset($detail['nilai_s']) ? $detail['nilai_s'] : $detail['nilai_wp'];
+                        $nilaiV = isset($detail['nilai_v']) ? $detail['nilai_v'] : ($totalS > 0 ? $nilaiS / $totalS : 0);
+                    ?>
+                    <div style="margin-bottom: 15px; padding: 15px; background: white; border-radius: 6px;">
+                        <strong style="color: var(--primary);">V_<?= htmlspecialchars($detail['alternatif_nama']) ?> = S_<?= htmlspecialchars($detail['alternatif_nama']) ?> / Σ(Si)</strong><br>
+                        <span style="color: var(--text-secondary); font-size: 14px;">V_<?= htmlspecialchars($detail['alternatif_nama']) ?> = <?= number_format($nilaiS, 6) ?> / <?= number_format($totalS, 6) ?></span><br>
+                        <strong style="color: var(--accent); font-size: 16px;">V_<?= htmlspecialchars($detail['alternatif_nama']) ?> = <?= number_format($nilaiV, 6) ?></strong>
+                    </div>
+                    <?php 
+                        $count++;
+                    endforeach; 
+                    ?>
+                </div>
+            </div>
+            <?php endif; ?>
+        </div>
+            
+        <!-- Step 6: Ranking -->
+        <div id="result-step-5" class="calc-step" style="display: none;">
+            <h4>🏆 Step 5: Ranking Hasil</h4>
             <p style="color: var(--text-secondary); margin-bottom: 25px; line-height: 1.6;">
-                Alternatif diurutkan berdasarkan nilai WP dari tertinggi ke terendah. Alternatif dengan nilai WP tertinggi adalah pilihan terbaik.
+                Alternatif diurutkan berdasarkan nilai V dari tertinggi ke terendah. Alternatif dengan nilai V tertinggi adalah pilihan terbaik.
             </p>
             
             <div class="value-card">
@@ -328,15 +451,20 @@ require_once __DIR__ . '/layouts/header.php';
                             <tr>
                                 <th>Ranking</th>
                                 <th>Alternatif</th>
-                                <th>Nilai WP</th>
+                                <th>Nilai V</th>
                                 <th>Persentase</th>
                             </tr>
                         </thead>
                         <tbody>
                             <?php 
-                            $maxWp = $calculationDetails['wpDetails'][0]['nilai_wp'];
+                            $maxV = 0;
+                            foreach ($calculationDetails['wpDetails'] as $detail) {
+                                $nilaiV = isset($detail['nilai_v']) ? $detail['nilai_v'] : $detail['nilai_wp'];
+                                if ($nilaiV > $maxV) $maxV = $nilaiV;
+                            }
                             foreach ($calculationDetails['wpDetails'] as $detail): 
-                                $percentage = ($detail['nilai_wp'] / $maxWp) * 100;
+                                $nilaiV = isset($detail['nilai_v']) ? $detail['nilai_v'] : $detail['nilai_wp'];
+                                $percentage = ($nilaiV / $maxV) * 100;
                             ?>
                             <tr style="transition: all 0.3s;" onmouseover="this.style.background='var(--bg-gray)'; this.style.transform='scale(1.01)'" onmouseout="this.style.background='white'; this.style.transform='scale(1)'">
                                 <td>
@@ -345,7 +473,7 @@ require_once __DIR__ . '/layouts/header.php';
                                     </span>
                                 </td>
                                 <td><strong style="font-size: 16px;"><?= htmlspecialchars($detail['alternatif_nama']) ?></strong></td>
-                                <td><strong style="color: var(--accent); font-size: 18px;"><?= number_format($detail['nilai_wp'], 6) ?></strong></td>
+                                <td><strong style="color: var(--accent); font-size: 18px;"><?= number_format($nilaiV, 6) ?></strong></td>
                                 <td>
                                     <div class="ranking-progress">
                                         <div class="progress-bar-container">
@@ -364,7 +492,7 @@ require_once __DIR__ . '/layouts/header.php';
                 <h3>🎯 Kesimpulan</h3>
                 <p>
                     Alternatif terbaik adalah <strong><?= htmlspecialchars($calculationDetails['wpDetails'][0]['alternatif_nama']) ?></strong>
-                    dengan nilai WP <strong><?= number_format($calculationDetails['wpDetails'][0]['nilai_wp'], 6) ?></strong>
+                    dengan nilai V <strong><?= number_format(isset($calculationDetails['wpDetails'][0]['nilai_v']) ? $calculationDetails['wpDetails'][0]['nilai_v'] : $calculationDetails['wpDetails'][0]['nilai_wp'], 6) ?></strong>
                 </p>
             </div>
         </div>
@@ -692,7 +820,7 @@ require_once __DIR__ . '/layouts/header.php';
     
     function showResultStep(stepNum) {
         // Hide all steps
-        for (let i = 1; i <= 4; i++) {
+        for (let i = 1; i <= 5; i++) {
             const stepEl = document.getElementById('result-step-' + i);
             if (stepEl) {
                 stepEl.style.display = 'none';

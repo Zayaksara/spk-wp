@@ -327,9 +327,10 @@ require_once __DIR__ . '/layouts/header.php';
     <!-- Step Navigation -->
     <div class="step-indicator" id="stepIndicator" style="display: none;">
         <button class="step-btn" onclick="showStep(1)">1. Data Awal</button>
-        <button class="step-btn" onclick="showStep(2)">2. Normalisasi</button>
-        <button class="step-btn" onclick="showStep(3)">3. Perhitungan WP</button>
-        <button class="step-btn" onclick="showStep(4)">4. Ranking</button>
+        <button class="step-btn" onclick="showStep(2)">2. Normalisasi Bobot</button>
+        <button class="step-btn" onclick="showStep(3)">3. Vektor S</button>
+        <button class="step-btn" onclick="showStep(4)">4. Vektor V</button>
+        <button class="step-btn" onclick="showStep(5)">5. Ranking</button>
     </div>
     
     <!-- Step 1: Data Awal -->
@@ -345,41 +346,50 @@ require_once __DIR__ . '/layouts/header.php';
         </div>
     </div>
     
-    <!-- Step 2: Normalisasi -->
+    <!-- Step 2: Normalisasi Bobot -->
     <div class="result-section" id="step2" style="display: none;">
-        <h2>🔄 Step 2: Normalisasi Nilai</h2>
+        <h2>⚖️ Step 2: Normalisasi Bobot</h2>
         <div class="formula-box">
-            <h4>Rumus Normalisasi:</h4>
-            <div id="normalisasiFormula"></div>
-        </div>
-        <div class="table-container">
-            <h3 style="color: var(--primary); margin-bottom: 15px;">Matriks Normalisasi</h3>
-            <div id="normalizedTable"></div>
+            <h4>Rumus Normalisasi Bobot:</h4>
+            <div id="normalisasiBobot"></div>
         </div>
     </div>
     
-    <!-- Step 3: Perhitungan WP -->
+    <!-- Step 3: Perhitungan S Vector -->
     <div class="result-section" id="step3" style="display: none;">
-        <h2>🧮 Step 3: Perhitungan Weighted Product</h2>
+        <h2>📐 Step 3: Perhitungan Vektor S</h2>
         <div class="formula-box">
-            <h4>Rumus WP:</h4>
-            <div id="wpFormula"></div>
+            <h4>Rumus S Vector:</h4>
+            <div id="sVectorFormula"></div>
         </div>
         <div class="table-container">
-            <h3 style="color: var(--primary); margin-bottom: 15px;">Detail Perhitungan WP</h3>
-            <div id="wpCalculationTable"></div>
+            <h3 style="color: var(--primary); margin-bottom: 15px;">Detail Perhitungan S Vector</h3>
+            <div id="sVectorTable"></div>
         </div>
     </div>
     
-    <!-- Step 4: Ranking -->
+    <!-- Step 4: Perhitungan V Vector -->
     <div class="result-section" id="step4" style="display: none;">
-        <h2>🏆 Step 4: Ranking Hasil</h2>
+        <h2>📊 Step 4: Perhitungan Vektor V</h2>
+        <div class="formula-box">
+            <h4>Rumus V Vector:</h4>
+            <div id="vVectorFormula"></div>
+        </div>
+        <div class="table-container">
+            <h3 style="color: var(--primary); margin-bottom: 15px;">Detail Perhitungan V Vector</h3>
+            <div id="vVectorTable"></div>
+        </div>
+    </div>
+    
+    <!-- Step 5: Ranking -->
+    <div class="result-section" id="step5" style="display: none;">
+        <h2>🏆 Step 5: Ranking Hasil</h2>
         <div class="table-container">
             <h3 style="color: var(--primary); margin-bottom: 15px;">Tabel Ranking</h3>
             <div id="rankingTable"></div>
         </div>
         <div class="chart-container">
-            <h3 style="color: var(--primary); margin-bottom: 15px;">Grafik Nilai WP</h3>
+            <h3 style="color: var(--primary); margin-bottom: 15px;">Grafik Nilai V</h3>
             <canvas id="wpChart"></canvas>
         </div>
         <div class="info-box" id="conclusionBox" style="margin-top: 20px;">
